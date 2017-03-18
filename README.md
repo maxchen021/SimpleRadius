@@ -1,7 +1,9 @@
 # SimpleRadius
 
-This project aim to create a simple radius server so anyone can use it to turn any home wifi to enterprise wifi (WPA2 Enterprise).
+This project aim to create a simple radius server so anyone can use it to turn any home wifi into an enterprise wifi (WPA2 Enterprise) in 3 simple steps.
 
+![alt text](http://simpleradius.weebly.com/uploads/2/3/9/3/23939139/1_2_orig.png)
+![alt text](http://simpleradius.weebly.com/uploads/2/3/9/3/23939139/2_orig.png)
 
 ### Usage 1 (Docker)
 
@@ -26,5 +28,5 @@ Run the following command:
 $ sudo ./installation/arch_linux/install.sh
 ```
 
-Use your browser to access https://<hostname> 
+Use your browser to access https://(hostname)
    * Credential: admin/password
