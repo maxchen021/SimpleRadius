@@ -3,7 +3,7 @@
 This project aim to create a simple radius server so anyone can use it to turn any home wifi into an enterprise wifi (WPA2 Enterprise) in 3 simple steps.
 
 ![alt text](http://simpleradius.weebly.com/uploads/2/3/9/3/23939139/1_2_orig.png)
-![alt text](http://simpleradius.weebly.com/uploads/2/3/9/3/23939139/2_orig.png)
+![alt text](https://simpleradius.weebly.com/uploads/2/3/9/3/23939139/simpleradius-2_orig.png)
 
 ### Usage 1 (Docker)
 
