@@ -19,7 +19,7 @@ $CURRENT_DB=new Database();
 
 global $SYSTEM_SETTING;
 
-Encryption::GetEncryptionConfig();
+(new Encryption())->GetEncryptionConfig();
 
 
 

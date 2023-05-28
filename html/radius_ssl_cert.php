@@ -145,7 +145,7 @@ function SaveSSLCert()
   
   $ssl_certs->SaveSSLCertsToFile();
   
-  SimpleRadius::Run_Command("Reload_FreeRadius_Config");
+  (new SimpleRadius())->Run_Command("Reload_FreeRadius_Config");
   
 
 

@@ -63,12 +63,12 @@ ShowFooter();
 function RestartRadiusService()
 {
   global $form_message;
-  $result=SimpleRadius::Run_Command_With_Output("Validate_FreeRadius_Configs");
+  $result=(new SimpleRadius())->Run_Command_With_Output("Validate_FreeRadius_Configs");
   $result=substr($result,-1,1);
   //if validation return 0, then config is correct
   if(strcmp($result,'0')==0)
   {
-      SimpleRadius::Run_Command("Restart_FreeRadius_Service");
+      (new SimpleRadius())->Run_Command("Restart_FreeRadius_Service");
       $form_message="Radius service restarted successfully";
   }
   else
@@ -80,7 +80,7 @@ function RestartRadiusService()
 //=========================================================================================
 function RestartSystem()
 {
- SimpleRadius::Run_Background_Command("Restart_System");
+ (new SimpleRadius())->Run_Background_Command("Restart_System");
  header("Location: redirect_message.php?type=system_reboot");
 }
 

@@ -93,13 +93,23 @@ function RestoreConfigBackupFile()
 
   //create the new one
   mkdir($SYSTEM_SETTING["config_backup_directory_path"],0755,true);
-  $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; openssl aes-256-cbc -d -a -salt -pass pass:"
+  $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; openssl aes-256-cbc -md sha256 -d -a -salt -pass pass:"
           . $SYSTEM_SETTING["config_file_encryption_key"]
           . " -in " . $backup_filename
           . " -out " . $SYSTEM_SETTING["config_backup_filename"] . " 2>&1";
 
   $result=`$command`;
-  if(strcmp(trim($result),"")!=0) {
+  #decrypt the old version (v1.0) of the backup
+  if(str_contains($result, "bad decrypt")) {
+    $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; openssl aes-256-cbc -md md5 -d -a -salt -pass pass:"
+          . $SYSTEM_SETTING["config_file_encryption_key"]
+          . " -in " . $backup_filename
+          . " -out " . $SYSTEM_SETTING["config_backup_filename"] . " 2>&1";
+
+    $result=`$command`;
+  }
+  
+  if(str_contains($result, "bad decrypt")) {
     $form_message="The backup configuration file password is incorrect!";
     return;
   }
@@ -110,7 +120,7 @@ function RestoreConfigBackupFile()
 
   if( CheckForCorrectBackupConfigVersion()==false )
   {
-    $form_message="The backup file is not for the current firmware version";
+    $form_message="The backup file is not compatible with the current firmware version";
     return;
   }
 
@@ -119,10 +129,13 @@ function RestoreConfigBackupFile()
 
   global $CURRENT_DB;
   $CURRENT_DB=new Database();
-  Encryption::GetEncryptionConfig();
+  $CURRENT_DB->UpgradeDB();
+  (new Encryption())->GetEncryptionConfig();
 
-  FreeRadius::CreateClientConfig();
-  FreeRadius::CreateUserConfig();
+  $freeradius = new FreeRadius();
+	$freeradius->CreateClientConfig();
+	$freeradius->CreateUserConfig();
+	$freeradius->CreateSiteConfigs();
   
   $ssl_certs = new SSLCerts();
   $ssl_certs->SetSSLCertType('https');
@@ -132,7 +145,7 @@ function RestoreConfigBackupFile()
   $ssl_certs->SetSSLCertType('radius');
   $ssl_certs->SaveSSLCertsToFile();
 
-  SimpleRadius::Run_Background_Command("System_Restore");
+  (new SimpleRadius())->Run_Background_Command("System_Restore");
   header("Location: redirect_message.php?type=system_restore");
 
 }
@@ -154,8 +167,8 @@ function CheckForCorrectBackupConfigVersion()
 		if($row=$result->fetchArray())
 		{
         if( isset($row['value']) && strcmp($row['value'],"")!=0 ) {
-            $db_version =floatval($row['value']);
-            if ($db_version==$CURRENT_DB->GetDBVersion())
+            $backup_db_version =floatval($row['value']);
+            if ($backup_db_version<=$CURRENT_DB->GetDBVersion())
             {
               return true;
             }
@@ -168,7 +181,6 @@ function CheckForCorrectBackupConfigVersion()
   
   
 }
-
 //=========================================================================================
 
 
@@ -177,7 +189,7 @@ function CheckForCorrectBackupConfigVersion()
 //=========================================================================================
 function Factory_Reset()
 {
-  SimpleRadius::Run_Background_Command("Factory_Reset");
+  (new SimpleRadius())->Run_Background_Command("Factory_Reset");
   header("Location: redirect_message.php?type=factory_reset");
 }
 
@@ -194,7 +206,7 @@ function GetBackupConfigFilePassword()
   if($row=$result->fetchArray())
   {
     if( isset($row['value']) && strcmp($row['value'],"")!=0 ) {
-      $backup_config_file_password=Encryption::Decrypt($row['value']);
+      $backup_config_file_password=(new Encryption())->Decrypt($row['value']);
     }
   }
 

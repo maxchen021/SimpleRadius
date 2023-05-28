@@ -125,8 +125,8 @@ function SaveSSLCert()
 
   $ssl_certs->SaveSSLCertsToFile();
   
- // SimpleRadius::Run_Command("Reload_Apache_Config");
-  SimpleRadius::Run_Background_Command("Restart_Apache_Service");
+ // (new SimpleRadius())->Run_Command("Reload_Apache_Config");
+  (new SimpleRadius())->Run_Background_Command("Restart_Apache_Service");
   header("Location: redirect_message.php?type=https_ssl_cert_change");
 
 

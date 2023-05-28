@@ -55,7 +55,7 @@ $SYSTEM_SETTING["wifi_client_tool_for_windows_temp_directory_path"]=$SYSTEM_SETT
 
 
 $SYSTEM_SETTING["title"]='Simple Radius';
-$SYSTEM_SETTING['version']="1.0";
+$SYSTEM_SETTING['version']="2.0";
 
 $SYSTEM_SETTING["min_session_time"]=1800;
 $SYSTEM_SETTING["max_session_time"]=3600;
@@ -64,8 +64,8 @@ $SYSTEM_SETTING["min_session_renewal_time"]=300;
 $SYSTEM_SETTING["max_session_renewal_time"]=600;
 
 
-$SYSTEM_SETTING["basic_setting_menu"]=array("wireless_routers.php"=>"Wireless Routers","radius_users.php"=>"Users","wifi_client_tool.php"=>"Wi-Fi Client Tool");
-$SYSTEM_SETTING["advanced_setting_menu"]=array("admin_user.php"=>"Admin User","https_ssl_cert.php"=>"HTTPS SSL Certificate","radius_ssl_cert.php"=>"Radius SSL Certificate","backup.php"=>"Backup","system_services.php"=>"System Services","system_log.php"=>"System Log");
+$SYSTEM_SETTING["basic_setting_menu"]=array("wireless_routers.php"=>"Wireless Routers","radius_users.php"=>"Users");
+$SYSTEM_SETTING["advanced_setting_menu"]=array("admin_user.php"=>"Admin User","https_ssl_cert.php"=>"HTTPS SSL Certificate","radius_ssl_cert.php"=>"Radius SSL Certificate","radius_configs.php"=>"Radius Configs","backup.php"=>"Backup","system_services.php"=>"System Services","system_log.php"=>"System Log");
 $SYSTEM_SETTING["other_setting_menu"]=array("logout.php"=>"Logout");
 
 //redirect message setting

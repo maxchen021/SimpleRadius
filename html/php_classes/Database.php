@@ -76,6 +76,21 @@ class Database
 		}
 		return 0;
 	}
+
+	public function UpgradeDB()
+	{
+		if($this->GetDBVersion()==1) {
+			$this->UpgradeDB1To2();
+		}
+	}
+
+	public function UpgradeDB1To2()
+	{
+		global $SYSTEM_SETTING;
+		$db_upgrade_script_filename = $SYSTEM_SETTING["factory_default_config_directory"] . "/db_upgrade_scripts/v2.sql";
+		$query = file_get_contents($db_upgrade_script_filename);
+		$this->DBUpdateQuery($query);
+	}
 }
 
 
