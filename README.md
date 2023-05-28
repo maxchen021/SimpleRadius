@@ -1,6 +1,6 @@
 # SimpleRadius
 
-This project aim to create a simple radius server so anyone can use it to turn any home wifi into an enterprise wifi (WPA2/WPA3 Enterprise) in 3 simple steps.
+This project aim to create a simple radius server so anyone can use it to turn any home wifi into an enterprise wifi (WPA2/WPA3 Enterprise) in 3 simple steps:
 
 1. Add Router Info in SimpleRadius
 ![screenshot 1](./images/screenshot1.png)
@@ -9,6 +9,7 @@ This project aim to create a simple radius server so anyone can use it to turn a
 ![screenshot 2](./images/screenshot2.png)
   
 3. Add Radius Info in Your Router
+![screenshot 3](./images/screenshot3.png)
 
 ### Usage via Docker
 
