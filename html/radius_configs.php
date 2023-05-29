@@ -60,13 +60,19 @@ ShowFooter();
 function SaveConfigs()
 {
   $eap_config=trim($_POST['eap_config']);
+  $default_config=trim($_POST['default_config']);
+  $inner_tunnel_config=trim($_POST['inner_tunnel_config']);
+
 
   global $SYSTEM_SETTING;
   global $form_message;
 
   $freeradius = new FreeRadius();
   $freeradius->SaveConfigToDB("eap", $eap_config);
+  $freeradius->SaveConfigToDB("default", $default_config);
+  $freeradius->SaveConfigToDB("inner-tunnel", $inner_tunnel_config);
   $freeradius->CreateSiteConfigs();
+  $freeradius->CreateMods();
 
   $form_message="Radius configs saved successfully";
 
@@ -80,6 +86,8 @@ function DisplayInput()
 
   $freeradius = new FreeRadius();
   $eap_config=$freeradius->GetConfigFromDB('eap');
+  $default_config=$freeradius->GetConfigFromDB('default');
+  $inner_tunnel_config=$freeradius->GetConfigFromDB('inner-tunnel');
   
   $mobile_detect = new Mobile_Detect;
   if ( $mobile_detect->isMobile() ) {
@@ -97,6 +105,22 @@ echo '
   <label class="control-label" for="eap_config">eap</label>
   <div class="controls" >                     
     <textarea id="eap_config" name="eap_config" rows="20" ' .$textarea_width_style. '>' . $eap_config . '</textarea>
+  </div>
+</div>
+
+<!-- Textarea -->
+<div class="control-group">
+  <label class="control-label" for="default_config">default site</label>
+  <div class="controls" >                     
+    <textarea id="default_config" name="default_config" rows="20" ' .$textarea_width_style. '>' . $default_config . '</textarea>
+  </div>
+</div>
+
+<!-- Textarea -->
+<div class="control-group">
+  <label class="control-label" for="inner_tunnel_config">inner-tunnel site</label>
+  <div class="controls" >                     
+    <textarea id="inner_tunnel_config" name="inner_tunnel_config" rows="20" ' .$textarea_width_style. '>' . $inner_tunnel_config . '</textarea>
   </div>
 </div>
 

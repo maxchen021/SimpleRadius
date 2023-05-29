@@ -14,6 +14,7 @@ $simple_radius_config['freeradius_config_directory'] = $simple_radius_config['co
 $simple_radius_config['freeradius_user_config'] = $simple_radius_config['freeradius_config_directory'] . "/users";
 $simple_radius_config['freeradius_router_config'] = $simple_radius_config['freeradius_config_directory'] . "/clients.conf";
 $simple_radius_config['freeradius_site_config_directory'] = $simple_radius_config['freeradius_config_directory'] . "/site";
+$simple_radius_config['freeradius_mods_directory'] = $simple_radius_config['freeradius_config_directory'] . "/mods";
 
 $simple_radius_config['https_ssl_cert_directory'] = $simple_radius_config['config_directory'] . "/https_ssl_certs";
 $simple_radius_config['https_ssl_cert_public_key'] = $simple_radius_config['https_ssl_cert_directory'] . "/server.pem";
@@ -41,6 +42,7 @@ if ( is_file('/etc/debian_version') )
 
 	$freeradius_config['user_config']=$freeradius_config['config_directory'] . "/mods-config/files/authorize";
 	$freeradius_config['site_config_directory']=$freeradius_config['config_directory'] . "/sites-enabled";
+	$freeradius_config['mods_directory']=$freeradius_config['config_directory'] . "/mods-enabled";
 
 	$apache_config['config_directory']="/etc/apache2";
 	$apache_config['apache_user']="www-data";
@@ -83,6 +85,9 @@ switch($options) {
 		break;
 	case "Update_Radius_Site_Configs":
 		Update_Radius_Site_Configs();
+		break;
+	case "Update_Radius_Mods":
+		Update_Radius_Mods();
 		break;
 	case "Update_Radius_Router_Config":
 		Update_Radius_Router_Config();
@@ -159,6 +164,7 @@ function Restore_Config_Files_From_DB()
 	$freeradius->CreateClientConfig();
 	$freeradius->CreateUserConfig();
 	$freeradius->CreateSiteConfigs();
+	$freeradius->CreateMods();
 	
 	$ssl_certs = new SSLCerts();
 	$ssl_certs->SetSSLCertType('https');
@@ -194,9 +200,23 @@ function Update_Radius_Site_Configs()
   echo `$command`;
 
   #fix permission, radius conf and apache conf are owned by root to ensure it wouldn't get overriden by radius and apache program itself
-  $command="chown root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['user_config'];
+  $command="chown -R root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['site_config_directory'];
   echo `$command`;
-  $command="chmod 640 " . $freeradius_config['user_config'];
+  $command="chmod -R 640 " . $freeradius_config['site_config_directory'] . "/*";
+  echo `$command`;
+}
+#----------------------------------------------------------------------------
+function Update_Radius_Mods()
+{
+  global $simple_radius_config, $freeradius_config, $apache_config;
+  $command="mv " . $simple_radius_config['freeradius_mods_directory'] . "/* " . $freeradius_config['mods_directory'] . "/";
+  #echo $command . "\n";
+  echo `$command`;
+
+  #fix permission, radius conf and apache conf are owned by root to ensure it wouldn't get overriden by radius and apache program itself
+  $command="chown -R root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['mods_directory'];
+  echo `$command`;
+  $command="chmod -R 640 " . $freeradius_config['mods_directory'] . "/*";
   echo `$command`;
 }
 #----------------------------------------------------------------------------
@@ -433,6 +453,7 @@ function Factory_Reset()
 	Update_Radius_Router_Config();
 	Update_Radius_User_Config();
 	Update_Radius_Site_Configs();
+	Update_Radius_Mods();
 
 	#fix permission
   $command="chown -R " . $apache_config['apache_user'] . ":" . $apache_config['apache_group'] . " " . $simple_radius_config['main_directory'];

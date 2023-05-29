@@ -136,6 +136,7 @@ function RestoreConfigBackupFile()
 	$freeradius->CreateClientConfig();
 	$freeradius->CreateUserConfig();
 	$freeradius->CreateSiteConfigs();
+  $freeradius->CreateMods();
   
   $ssl_certs = new SSLCerts();
   $ssl_certs->SetSSLCertType('https');

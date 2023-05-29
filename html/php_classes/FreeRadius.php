@@ -103,7 +103,7 @@ class FreeRadius
 		global $CURRENT_DB;
 		global $SYSTEM_SETTING;
 
-		$query="select * from freeradius_configs";
+		$query="select * from freeradius_configs where type='site'";
 
   		$result=$CURRENT_DB->DBSelectQuery($query);
 
@@ -119,6 +119,30 @@ class FreeRadius
 		}
 
 		(new SimpleRadius())->Run_Command("Update_Radius_Site_Configs");
+		(new SimpleRadius())->Run_Command("Restart_FreeRadius_Service");
+	}
+	//=========================================================================================
+	public function CreateMods()
+	{
+		global $CURRENT_DB;
+		global $SYSTEM_SETTING;
+
+		$query="select * from freeradius_configs where type='mods'";
+
+  		$result=$CURRENT_DB->DBSelectQuery($query);
+
+		while($row = $result->fetchArray())
+		{
+			$filename=$SYSTEM_SETTING["freeradius_config_directory"] . "/mods/" . $row['config_name'];
+
+			$filehandle = fopen($filename, 'w') or die("can't open file");
+			$value = base64_decode($row['value']);
+
+			fwrite($filehandle,$value);
+			fclose($filehandle);
+		}
+
+		(new SimpleRadius())->Run_Command("Update_Radius_Mods");
 		(new SimpleRadius())->Run_Command("Restart_FreeRadius_Service");
 	}
 	//=========================================================================================
