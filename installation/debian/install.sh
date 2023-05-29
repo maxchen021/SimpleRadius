@@ -52,7 +52,10 @@ cp ./installation/debian/apache2/conf/SimpleRadius/*.conf /etc/apache2/sites-ena
 
 #install and setup freeradius
 apt-get -y install freeradius
-
+freeradius_version="3.0"
+cp ./system_configs/etc/freeradius/${freeradius_version}/radiusd.conf /etc/freeradius/${freeradius_version}/radiusd.conf
+chown freerad:freerad /etc/freeradius/${freeradius_version}/radiusd.conf
+chmod 640 /etc/freeradius/${freeradius_version}/radiusd.conf
 
 #setup the script
 apt-get -y install sudo
