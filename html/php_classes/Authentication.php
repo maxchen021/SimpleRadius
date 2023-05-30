@@ -24,7 +24,7 @@ class Authentication
 
 
 
-		$password=Encryption::EncryptPassword($password,$salt);
+		$password=(new Encryption())->EncryptPassword($password,$salt);
 
 		//check if password hash is the same
 		if(strcmp($password,$user->GetPassword())!=0)
@@ -44,13 +44,13 @@ class Authentication
 		$this->DeleteCurrentSession();
 		$this->DeleteExpiredSession();
 
-		$str=Misc::GenerateRandomString(20);
+		$str=(new Misc())->GenerateRandomString(20);
 		$session_id=crypt($str,$SYSTEM_SETTING["system_sha512_salt"]);
 
 		//make sure the new session id does not already existed
 		while($this->CheckForExistingSessionID($session_id))
 		{
-		$str=Misc::GenerateRandomString(20);
+		$str=(new Misc())->GenerateRandomString(20);
 		$session_id=crypt($str,$SYSTEM_SETTING["system_sha512_salt"]);
 		}
 
@@ -250,13 +250,13 @@ class Authentication
 	{
 		global $SYSTEM_SETTING;
 
-		$str=Misc::GenerateRandomString(20);
+		$str=(new Misc())->GenerateRandomString(20);
 		$new_session_id=crypt($str,$SYSTEM_SETTING["system_sha512_salt"]);
 
 		//make sure the new session id does not already existed
 		while($this->CheckForExistingSessionID($new_session_id))
 		{
-		$str=Misc::GenerateRandomString(20);
+		$str=(new Misc())->GenerateRandomString(20);
 		$new_session_id=crypt($str,$SYSTEM_SETTING["system_sha512_salt"]);
 		}
 

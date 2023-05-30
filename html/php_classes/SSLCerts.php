@@ -54,10 +54,10 @@ class SSLCerts
 		 
 		 if ( strcmp($this->ssl_cert_type,"https")==0 )
 		 {
-		 	SimpleRadius::Run_Command("Update_Apache_SSL_Certs");
+		 	(new SimpleRadius())->Run_Command("Update_Apache_SSL_Certs");
 		 }
 		 elseif ( strcmp($this->ssl_cert_type,"radius")==0 ) {
-		 	SimpleRadius::Run_Command("Update_Radius_SSL_Certs");
+		 	(new SimpleRadius())->Run_Command("Update_Radius_SSL_Certs");
 		 }
 		 
 	     

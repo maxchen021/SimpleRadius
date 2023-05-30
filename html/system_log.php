@@ -22,7 +22,7 @@ $mobile_detect = new Mobile_Detect;
 	  $textarea_rows="50";
   }
 
-$system_log=SimpleRadius::Run_Command_With_Output("Get_FreeRadius_Log_File");
+$system_log=(new SimpleRadius())->Run_Command_With_Output("Get_FreeRadius_Log_File");
 
 echo '<div class="span10">
 			<div class="hero-unit">

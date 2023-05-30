@@ -16,6 +16,7 @@ $radius_secret="";
 $radius_secret2="";
 $form_message="";
 $current_router_id="";
+$additional_router_settings="";
 
 if(isset($_POST['ready_to_submit']) && $_POST['ready_to_submit']==1)
 {
@@ -55,7 +56,7 @@ echo '
 <legend><b>Wireless Routers</b> <small id="form_message" style="color:red;">' . $form_message . '</small></legend>';
 
 
-DisplayInput($router_name,$router_ip,$radius_secret,$radius_secret2);
+DisplayInput($router_name,$router_ip,$radius_secret,$radius_secret2,$additional_router_settings);
 
 if(isset($_POST['post_action']) && strcmp($_POST['post_action'],'edit')==0)
 {
@@ -102,11 +103,13 @@ function AddRouter()
   global $router_ip;
   global $radius_secret;
   global $radius_secret2;
+  global $additional_router_settings;
 
   $router_name=trim($_POST['router_name']);
   $router_ip=trim($_POST['router_ip']);
   $radius_secret=trim($_POST['radius_secret']);
   $radius_secret2=trim($_POST['radius_secret2']);
+  $additional_router_settings=trim($_POST['additional_router_settings']);
 
   global $form_message;
 
@@ -120,7 +123,8 @@ function AddRouter()
 
   $router_name=base64_encode($router_name);
   $router_ip=base64_encode($router_ip);
-  $radius_secret=Encryption::Encrypt($radius_secret);
+  $radius_secret=(new Encryption())->Encrypt($radius_secret);
+  $additional_router_settings=base64_encode($additional_router_settings);
 
 
   $query="select * from wireless_routers where router_ip='" . $router_ip . "'";
@@ -131,14 +135,16 @@ function AddRouter()
     $form_message="Router with this ip already exist";
     $router_name=base64_decode($router_name);
     $router_ip=base64_decode($router_ip);
-    $radius_secret=Encryption::Decrypt($radius_secret);
+    $radius_secret=(new Encryption())->Decrypt($radius_secret);
+    $additional_router_settings=base64_decode($additional_router_settings);
     return;
   }
 
-  $query="insert into wireless_routers (router_name,router_ip,radius_secret) values ("
+  $query="insert into wireless_routers (router_name,router_ip,radius_secret,additional_settings) values ("
     . "'" . $router_name . "', "
     . "'" . $router_ip . "', "
-    . "'" . $radius_secret . "') ";
+    . "'" . $radius_secret . "', "
+    . "'" . $additional_router_settings . "') ";
 
   $result=$CURRENT_DB->DBUpdateQuery($query);
 
@@ -149,8 +155,9 @@ function AddRouter()
     $router_ip="";
     $radius_secret="";
     $radius_secret2="";
+    $additional_router_settings="";
 
-    FreeRadius::CreateClientConfig();
+    (new FreeRadius())->CreateClientConfig();
 
   }
   else
@@ -190,7 +197,7 @@ function DeleteRouter()
   {
     $form_message="Router deleted successfully";
 
-    FreeRadius::CreateClientConfig();
+    (new FreeRadius())->CreateClientConfig();
 
   }
   else
@@ -228,12 +235,14 @@ function EditRouter()
     global $radius_secret;
     global $radius_secret2;
     global $current_router_id;
+    global $additional_router_settings;
 
     $router_name=base64_decode($row['router_name']);
     $router_ip=base64_decode($row['router_ip']);
-    $radius_secret=Encryption::Decrypt($row['radius_secret']);
-    $radius_secret2=Encryption::Decrypt($row['radius_secret']);
+    $radius_secret=(new Encryption())->Decrypt($row['radius_secret']);
+    $radius_secret2=(new Encryption())->Decrypt($row['radius_secret']);
     $current_router_id=$row['router_id'];
+    $additional_router_settings=base64_decode($row['additional_settings']);
   }
   else
   {
@@ -253,12 +262,14 @@ function SaveEditedRouter()
   global $radius_secret;
   global $radius_secret2;
   global $current_router_id;
+  global $additional_router_settings;
 
   $current_router_id=trim($_POST['current_router_id']);
   $router_name=trim($_POST['router_name']);
   $router_ip=trim($_POST['router_ip']);
   $radius_secret=trim($_POST['radius_secret']);
   $radius_secret2=trim($_POST['radius_secret2']);
+  $additional_router_settings=trim($_POST['additional_router_settings']);
 
   global $form_message;
 
@@ -280,7 +291,8 @@ function SaveEditedRouter()
 
   $router_name=base64_encode($router_name);
   $router_ip=base64_encode($router_ip);
-  $radius_secret=Encryption::Encrypt($radius_secret);
+  $radius_secret=(new Encryption())->Encrypt($radius_secret);
+  $additional_router_settings=base64_encode($additional_router_settings);
 
   $query="select * from wireless_routers where router_ip='" . $router_ip . "' and router_id!=" . $current_router_id;
   $result=$CURRENT_DB->DBSelectQuery($query);
@@ -291,14 +303,16 @@ function SaveEditedRouter()
     $_POST['post_action']="edit";
     $router_name=base64_decode($router_name);
     $router_ip=base64_decode($router_ip);
-    $radius_secret=Encryption::Decrypt($radius_secret);
+    $radius_secret=(new Encryption())->Decrypt($radius_secret);
+    $additional_router_settings=base64_decode($additional_router_settings);
     return;
   }
 
   $query="update wireless_routers set router_name='"
   . $router_name . "', router_ip='"
   . $router_ip . "', radius_secret='"
-  . $radius_secret . "' where router_id=" . $current_router_id;
+  . $radius_secret . "', additional_settings='"
+  . $additional_router_settings . "' where router_id=" . $current_router_id;
 
 
 
@@ -312,10 +326,11 @@ function SaveEditedRouter()
     $radius_secret="";
     $radius_secret2="";
     $current_router_id="";
+    $additional_router_settings="";
 
     $_POST['post_action']="";
 
-    FreeRadius::CreateClientConfig();
+    (new FreeRadius())->CreateClientConfig();
 
   }
   else
@@ -332,6 +347,7 @@ function ValidateInput()
   global $router_ip;
   global $radius_secret;
   global $radius_secret2;
+  global $additional_router_settings;
 
   global $form_message;
 
@@ -379,8 +395,17 @@ function ValidateInput()
   return true;
 }
 
-function DisplayInput($router_name,$router_ip,$radius_secret,$radius_secret2)
+function DisplayInput($router_name,$router_ip,$radius_secret,$radius_secret2,$additional_router_settings)
 {
+  $mobile_detect = new Mobile_Detect;
+  if ( $mobile_detect->isMobile() ) {
+      $textarea_width_style="";
+  }
+  else
+  {     
+      $textarea_width_style='style="width:270px;"';
+  }
+
   echo '
 
 
@@ -424,7 +449,13 @@ function DisplayInput($router_name,$router_ip,$radius_secret,$radius_secret2)
 </div>
 
 
-
+<!-- Textarea -->
+<div class="control-group">
+  <label class="control-label" for="additional_router_settings">Additional Settings</label>
+  <div class="controls" >                     
+    <textarea id="additional_router_settings" name="additional_router_settings" rows="2" ' .$textarea_width_style. '>' . $additional_router_settings . '</textarea>
+  </div>
+</div>
 
 
 
@@ -512,6 +543,9 @@ echo '
               Radius Secret
             </th>
             <th>
+              Additional Settings
+            </th>
+            <th>
 
             </th>
           </tr>
@@ -532,11 +566,13 @@ echo '
       {
         $css_style_class='class="info"';
         $css_style='style="border: none;background-color: #d9edf7;"';
+        $textarea_css_style='style="border: none;background-color: #d9edf7;overflow-y: scroll;"';
       }
       else
       {
         $css_style_class="";
         $css_style='style="border: none;"';
+        $textarea_css_style='style="border: none;overflow-y: scroll;"';
       }
 
        echo '<tr ' . $css_style_class . ' >';
@@ -557,8 +593,15 @@ echo '
             <td>
 
               <input type="password" readOnly="true" id="radius_secret_id_' . $count . '" value="'
-              . Encryption::Decrypt($row['radius_secret']) . '" ' . $css_style .'/>
+              . (new Encryption())->Decrypt($row['radius_secret']) . '" ' . $css_style .'/>
             </td>
+
+            <td>
+
+              <textarea readonly id="additional_router_settings" rows="2" ' .$textarea_css_style .'>'
+              . base64_decode($row['additional_settings']) . '</textarea>
+            </td>
+
              <td>
             <button class="btn btn-info" id="btn_show_radius_secret_' . $count . '" onclick="Show_Radius_Secret(\'radius_secret_id_' . $count . '\',\'btn_show_radius_secret_' . $count . '\');return false;" >Show Radius Secret</button>
             </td>
@@ -591,11 +634,13 @@ function DisplayRouterListForMobile()
       {
         $div_css_style='style="padding: 15px;background-color: #d9edf7;"';
         $password_css_style='style="border: none;background-color: #d9edf7;"';
+        $textarea__css_style='style="border: none;background-color: #d9edf7;overflow-y: scroll;"';
       }
       else
       {
         $div_css_style='style="padding: 15px;background-color: #e6fff2;"';
         $password_css_style='style="border: none;background-color: #e6fff2;"';
+        $textarea__css_style='style="border: none;background-color: #e6fff2;overflow-y: scroll;"';
       }
    
        echo '
@@ -634,9 +679,17 @@ function DisplayRouterListForMobile()
             <tr>
             <td>
               <input type="password" readOnly="true" id="radius_secret_id_' . $count . '" value="'
-              . Encryption::Decrypt($row['radius_secret']) . '"  ' . $password_css_style . '/>
+              . (new Encryption())->Decrypt($row['radius_secret']) . '"  ' . $password_css_style . '/>
             </td>
             </tr>
+
+            <tr>
+              <td><b>Additional Settings:</b></td>
+            </tr>
+            <tr><td>
+            <textarea readonly id="additional_router_settings" rows="2" ' .$textarea__css_style .'>'
+              . base64_decode($row['additional_settings']) . '</textarea>
+            </td></tr>
           
           
           <tr>

@@ -64,7 +64,7 @@ function GenerateConfigBackupFile()
   $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; tar -czf " . $SYSTEM_SETTING["config_backup_filename"] . " " . $SYSTEM_SETTING["config_backup_directory_name"];
   $result=`$command`;
 
-  $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; openssl aes-256-cbc -e -a -salt -pass pass:"
+  $command="cd " . $SYSTEM_SETTING["config_backup_temp_directory"] . "; openssl aes-256-cbc -md sha256 -e -a -salt -pass pass:"
           . $SYSTEM_SETTING["config_file_encryption_key"]
           . " -in " . $SYSTEM_SETTING["config_backup_filename"]
           . " -out " . $SYSTEM_SETTING["encrypted_config_backup_filename"];
@@ -85,7 +85,7 @@ function SaveBackupConfigFilePassword($backup_config_file_password)
 {
   global $CURRENT_DB;
 
-  $backup_config_file_password=Encryption::Encrypt($backup_config_file_password);
+  $backup_config_file_password=(new Encryption())->Encrypt($backup_config_file_password);
 
   $query="update system_setting set value='"
   . $backup_config_file_password . "' where system_setting='backup_config_file_password'";

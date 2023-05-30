@@ -13,6 +13,8 @@ $simple_radius_config["factory_default_config_directory"] = $simple_radius_confi
 $simple_radius_config['freeradius_config_directory'] = $simple_radius_config['config_directory'] . "/freeradius";
 $simple_radius_config['freeradius_user_config'] = $simple_radius_config['freeradius_config_directory'] . "/users";
 $simple_radius_config['freeradius_router_config'] = $simple_radius_config['freeradius_config_directory'] . "/clients.conf";
+$simple_radius_config['freeradius_site_config_directory'] = $simple_radius_config['freeradius_config_directory'] . "/site";
+$simple_radius_config['freeradius_mods_directory'] = $simple_radius_config['freeradius_config_directory'] . "/mods";
 
 $simple_radius_config['https_ssl_cert_directory'] = $simple_radius_config['config_directory'] . "/https_ssl_certs";
 $simple_radius_config['https_ssl_cert_public_key'] = $simple_radius_config['https_ssl_cert_directory'] . "/server.pem";
@@ -27,25 +29,27 @@ $simple_radius_config['radius_ssl_cert_ca_cert'] = $simple_radius_config['radius
 $simple_radius_config['radius_dh_parameters'] = $simple_radius_config['radius_ssl_cert_directory'] . "/dh";
 
 
-if ( is_file('/etc/arch-release') )
+if ( is_file('/etc/debian_version') )
 {
-	$freeradius_config['config_directory']="/etc/freeradius";
-	$freeradius_config['freeradius_user']="radiusd";
-	$freeradius_config['freeradius_group']="radiusd";
-	$freeradius_config['pid_file']="/var/run/radiusd/radiusd.pid";
-	$freeradius_config['restart_service_command']="if [ -f " . $freeradius_config['pid_file'] . " ]; then kill -9 `cat " . $freeradius_config['pid_file'] . "`; else pkill -9 radiusd ; fi; /usr/bin/radiusd -d /etc/raddb";
+	$freeradius_config['config_directory']="/etc/freeradius/3.0";
+	$freeradius_config['freeradius_user']="freerad";
+	$freeradius_config['freeradius_group']="freerad";
+	$freeradius_config['pid_file']="/var/run/freeradius/freeradius.pid";
+	$freeradius_config['restart_service_command']="/etc/init.d/freeradius restart";
 	$freeradius_config['reload_service_command']='kill -1 `cat ' . $freeradius_config['pid_file'] . '`';
-	$freeradius_config['validate_config_command']='radiusd -XC';
+	$freeradius_config['validate_config_command']='freeradius -XC';
+	$freeradius_config["radius_log_file"]="/var/log/freeradius/radius.log";
 
 	$freeradius_config['user_config']=$freeradius_config['config_directory'] . "/mods-config/files/authorize";
+	$freeradius_config['site_config_directory']=$freeradius_config['config_directory'] . "/sites-enabled";
+	$freeradius_config['mods_directory']=$freeradius_config['config_directory'] . "/mods-enabled";
 
-	$apache_config['config_directory']="/etc/httpd";
-	$apache_config['apache_user']="http";
-	$apache_config['apache_group']="http";
-	$apache_config['restart_service_command']="apachectl restart";
-	$apache_config['reload_service_command']="apachectl graceful";
-	$apache_config['validate_config_command']='apachectl -t';
-
+	$apache_config['config_directory']="/etc/apache2";
+	$apache_config['apache_user']="www-data";
+	$apache_config['apache_group']="www-data";
+	$apache_config['restart_service_command']="apache2ctl restart";
+	$apache_config['reload_service_command']="apache2ctl graceful";
+	$apache_config['validate_config_command']='apache2ctl -t';
 }
 
 
@@ -56,7 +60,7 @@ $freeradius_config['ssl_cert_public_key']=$freeradius_config['ssl_cert_directory
 $freeradius_config['ssl_cert_private_key']=$freeradius_config['ssl_cert_directory'] . "/server.key";
 $freeradius_config['ssl_cert_ca_cert']=$freeradius_config['ssl_cert_directory'] . "/ca.pem";
 $freeradius_config['dh_parameters']=$freeradius_config['ssl_cert_directory'] . "/dh";
-$freeradius_config["radius_log_file"]="/var/log/radius/radius.log";
+
 
 $apache_config['ssl_cert_directory']=$apache_config['config_directory'] . "/certs";
 $apache_config['ssl_cert_public_key']=$apache_config['ssl_cert_directory'] . "/server.pem";
@@ -78,6 +82,12 @@ $options=$argv[1];
 switch($options) {
 	case "Update_Radius_User_Config":
 		Update_Radius_User_Config();
+		break;
+	case "Update_Radius_Site_Configs":
+		Update_Radius_Site_Configs();
+		break;
+	case "Update_Radius_Mods":
+		Update_Radius_Mods();
 		break;
 	case "Update_Radius_Router_Config":
 		Update_Radius_Router_Config();
@@ -124,6 +134,9 @@ switch($options) {
 	case "Get_FreeRadius_Log_File":
 	  Get_FreeRadius_Log_File();
 	  break;
+	case "Restore_Config_Files_From_DB":
+	  Restore_Config_Files_From_DB();
+	  break;
   default:
     echo "usage: ./$SCRIPT_NAME.php options\n";
 		echo "your options: " . $options . "\n";
@@ -133,6 +146,37 @@ switch($options) {
 
 
 #----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+function Restore_Config_Files_From_DB()
+{
+	//need to change dir in order to work
+	$current_dir=getcwd();
+    global $simple_radius_config, $apache_config;
+	chdir($apache_config['public_html_dir']);
+	require($apache_config['public_html_dir'] . "/initialize.php");
+
+	global $CURRENT_DB;
+	$CURRENT_DB=new Database();
+	$CURRENT_DB->UpgradeDB();
+	(new Encryption())->GetEncryptionConfig();
+
+	$freeradius = new FreeRadius();
+	$freeradius->CreateClientConfig();
+	$freeradius->CreateUserConfig();
+	$freeradius->CreateSiteConfigs();
+	$freeradius->CreateMods();
+	
+	$ssl_certs = new SSLCerts();
+	$ssl_certs->SetSSLCertType('https');
+	$ssl_certs->SaveSSLCertsToFile();
+	
+	$ssl_certs = new SSLCerts();
+	$ssl_certs->SetSSLCertType('radius');
+	$ssl_certs->SaveSSLCertsToFile();
+	chdir($current_dir);
+
+	System_Restore();
+}
 #----------------------------------------------------------------------------
 function Update_Radius_User_Config()
 {
@@ -145,6 +189,34 @@ function Update_Radius_User_Config()
   $command="chown root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['user_config'];
   echo `$command`;
   $command="chmod 640 " . $freeradius_config['user_config'];
+  echo `$command`;
+}
+#----------------------------------------------------------------------------
+function Update_Radius_Site_Configs()
+{
+  global $simple_radius_config, $freeradius_config, $apache_config;
+  $command="mv " . $simple_radius_config['freeradius_site_config_directory'] . "/* " . $freeradius_config['site_config_directory'] . "/";
+  #echo $command . "\n";
+  echo `$command`;
+
+  #fix permission, radius conf and apache conf are owned by root to ensure it wouldn't get overriden by radius and apache program itself
+  $command="chown -R root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['site_config_directory'];
+  echo `$command`;
+  $command="chmod -R 640 " . $freeradius_config['site_config_directory'] . "/*";
+  echo `$command`;
+}
+#----------------------------------------------------------------------------
+function Update_Radius_Mods()
+{
+  global $simple_radius_config, $freeradius_config, $apache_config;
+  $command="mv " . $simple_radius_config['freeradius_mods_directory'] . "/* " . $freeradius_config['mods_directory'] . "/";
+  #echo $command . "\n";
+  echo `$command`;
+
+  #fix permission, radius conf and apache conf are owned by root to ensure it wouldn't get overriden by radius and apache program itself
+  $command="chown -R root:" . $freeradius_config['freeradius_group'] . " " . $freeradius_config['mods_directory'];
+  echo `$command`;
+  $command="chmod -R 640 " . $freeradius_config['mods_directory'] . "/*";
   echo `$command`;
 }
 #----------------------------------------------------------------------------
@@ -301,7 +373,7 @@ function Generate_Encryption_Config()
 		global $simple_radius_config, $apache_config;
 		chdir($apache_config['public_html_dir']);
 		require($apache_config['public_html_dir'] . "/initialize.php");
-		Encryption::GenerateEncryptionConfig();
+		(new Encryption())->GenerateEncryptionConfig();
 		chdir($current_dir);
 
 }
@@ -380,6 +452,8 @@ function Factory_Reset()
 
 	Update_Radius_Router_Config();
 	Update_Radius_User_Config();
+	Update_Radius_Site_Configs();
+	Update_Radius_Mods();
 
 	#fix permission
   $command="chown -R " . $apache_config['apache_user'] . ":" . $apache_config['apache_group'] . " " . $simple_radius_config['main_directory'];

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-INSTALL_STATUS_FILE=/etc/SimpleRadius/installed.txt
+INSTALL_STATUS_FILE=/etc/SimpleRadius/database/installed.txt
 
 if [ -f $INSTALL_STATUS_FILE ];
 then
-   /etc/SimpleRadius/scripts/simple_radius.php Restart_System
+   /etc/SimpleRadius/scripts/simple_radius.php Restore_Config_Files_From_DB
 else
    /etc/SimpleRadius/scripts/simple_radius.php Factory_Reset
    touch $INSTALL_STATUS_FILE
@@ -12,27 +12,27 @@ fi
 
 echo 'Simple Radius started successfully'
 
-httpd_fail_count=0
-radiusd_fail_count=0
+apache2_fail_count=0
+freeradius_fail_count=0
 max_fail_count=3
 
 while true;
 do
-    if [ `ps -ef | grep httpd | grep -v grep | wc -l` -eq 0 ]; then
-        httpd_fail_count=$(( $httpd_fail_count + 1 ))
+    if [ `ps -ef | grep apache2 | grep -v grep | wc -l` -eq 0 ]; then
+        apache2_fail_count=$(( $apache2_fail_count + 1 ))
     fi
 
-    if [ `ps -ef | grep radiusd | grep -v grep | wc -l` -eq 0 ]; then
-        radiusd_fail_count=$(( $radiusd_fail_count + 1 ))
+    if [ `ps -ef | grep freeradius | grep -v grep | wc -l` -eq 0 ]; then
+        freeradius_fail_count=$(( $freeradius_fail_count + 1 ))
     fi
 
-    if [ $httpd_fail_count -gt $max_fail_count ]; then
-        echo "Error: httpd failed more than ${max_fail_count} time"
+    if [ $apache2_fail_count -gt $max_fail_count ]; then
+        echo "Error: apache2 failed more than ${max_fail_count} time"
         exit
     fi
 
-    if [ $radiusd_fail_count -gt $max_fail_count ]; then
-        echo "Error: raiusd failed more than ${max_fail_count} time"
+    if [ $freeradius_fail_count -gt $max_fail_count ]; then
+        echo "Error: freeradius failed more than ${max_fail_count} time"
         exit
     fi
 

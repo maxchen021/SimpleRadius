@@ -57,7 +57,7 @@ private function GetUserInfoFromSQLQuery($query)
 private function GenerateSalt() {
 	$length=13;
 
-	$str='$6$'. Misc::GenerateRandomString($length);
+	$str='$6$'. (new Misc())->GenerateRandomString($length);
 
 	return $str;
 }
@@ -101,7 +101,7 @@ private function EncryptPassword()
  {
 
 
- 	$this->password=Encryption::EncryptPassword($this->password,$this->salt);
+ 	$this->password=(new Encryption())->EncryptPassword($this->password,$this->salt);
  }
 
  //=========================================================================================

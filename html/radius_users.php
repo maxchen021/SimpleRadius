@@ -12,6 +12,7 @@ $password="";
 $password2="";
 $form_message="";
 $current_user_id="";
+$additional_user_settings="";
 
 if(isset($_POST['ready_to_submit']) && $_POST['ready_to_submit']==1)
 {
@@ -52,7 +53,7 @@ echo '
 
 ';
 
-DisplayInput($username,$password,$password2);
+DisplayInput($username,$password,$password2,$additional_user_settings);
 
 if(isset($_POST['post_action']) && strcmp($_POST['post_action'],'edit')==0)
 {
@@ -98,11 +99,13 @@ function AddUser()
   global $username;
   global $password;
   global $password2;
+  global $additional_user_settings;
 
 
   $username=trim($_POST['username']);
   $password=trim($_POST['password']);
   $password2=trim($_POST['password2']);
+  $additional_user_settings=trim($_POST['additional_user_settings']);
 
 
   global $form_message;
@@ -117,7 +120,8 @@ function AddUser()
   global $CURRENT_DB;
 
   $username=base64_encode($username);
-  $password=Encryption::Encrypt($password);
+  $additional_user_settings=base64_encode($additional_user_settings);
+  $password=(new Encryption())->Encrypt($password);
 
 
 
@@ -128,13 +132,15 @@ function AddUser()
   {
     $form_message="Username already exist";
     $username=base64_decode($username);
-    $password=Encryption::Decrypt($password);
+    $additional_user_settings=base64_decode($additional_user_settings);
+    $password=(new Encryption())->Decrypt($password);
     return;
   }
 
-  $query="insert into radius_users (username,password) values ("
+  $query="insert into radius_users (username,password,additional_settings) values ("
     . "'" . $username . "', "
-    . "'" . $password . "') ";
+    . "'" . $password . "', "
+    . "'" . $additional_user_settings . "') ";
 
   $result=$CURRENT_DB->DBUpdateQuery($query);
 
@@ -144,8 +150,9 @@ function AddUser()
     $username="";
     $password="";
     $password2="";
+    $additional_user_settings="";
 
-    FreeRadius::CreateUserConfig();
+    (new FreeRadius())->CreateUserConfig();
 
   }
   else
@@ -185,7 +192,7 @@ function DeleteUser()
   {
     $form_message="User deleted successfully";
 
-    FreeRadius::CreateUserConfig();
+    (new FreeRadius())->CreateUserConfig();
   }
   else
   {
@@ -220,11 +227,13 @@ function EditUser()
     global $username;
     global $password;
     global $password2;
+    global $additional_user_settings;
     global $current_user_id;
 
     $username=base64_decode($row['username']);
-    $password=Encryption::Decrypt($row['password']);
-    $password2=Encryption::Decrypt($row['password']);
+    $password=(new Encryption())->Decrypt($row['password']);
+    $password2=(new Encryption())->Decrypt($row['password']);
+    $additional_user_settings=base64_decode($row['additional_settings']);
     $current_user_id=$row['user_id'];
   }
   else
@@ -244,11 +253,13 @@ function SaveEditedUser()
   global $password;
   global $password2;
   global $current_user_id;
+  global $additional_user_settings;
 
   $current_user_id=trim($_POST['current_user_id']);
   $username=trim($_POST['username']);
   $password=trim($_POST['password']);
   $password2=trim($_POST['password2']);
+  $additional_user_settings=trim($_POST['additional_user_settings']);
 
   global $form_message;
 
@@ -270,7 +281,8 @@ function SaveEditedUser()
   global $CURRENT_DB;
 
   $username=base64_encode($username);
-  $password=Encryption::Encrypt($password);
+  $password=(new Encryption())->Encrypt($password);
+  $additional_user_settings=base64_encode($additional_user_settings);
 
   $query="select * from radius_users where username='" . $username . "' and user_id!=" .$current_user_id;
   $result=$CURRENT_DB->DBSelectQuery($query);
@@ -280,14 +292,15 @@ function SaveEditedUser()
     $form_message="Username already exist";
     $_POST['post_action']="edit";
     $username=base64_decode($username);
-    $password=Encryption::Decrypt($password);
+    $password=(new Encryption())->Decrypt($password);
     return;
   }
 
 
   $query="update radius_users set username='"
   . $username . "', password='"
-  . $password . "' where user_id=" . $current_user_id;
+  . $password . "', additional_settings='"
+  . $additional_user_settings . "' where user_id=" . $current_user_id;
 
 
 
@@ -300,10 +313,11 @@ function SaveEditedUser()
     $password="";
     $password2="";
     $current_user_id="";
+    $additional_user_settings="";
 
     $_POST['post_action']="";
 
-    FreeRadius::CreateUserConfig();
+    (new FreeRadius())->CreateUserConfig();
 
   }
   else
@@ -319,6 +333,7 @@ function ValidateInput()
   global $username;
   global $password;
   global $password2;
+  global $additional_user_settings;
 
   global $form_message;
 
@@ -360,8 +375,17 @@ function ValidateInput()
   return true;
 }
 
-function DisplayInput($username,$password,$password2)
+function DisplayInput($username,$password,$password2,$additional_user_settings)
 {
+  $mobile_detect = new Mobile_Detect;
+  if ( $mobile_detect->isMobile() ) {
+      $textarea_width_style="";
+  }
+  else
+  {     
+      $textarea_width_style='style="width:270px;"';
+  }
+
   echo '
   <!-- Text input-->
 <div class="control-group">
@@ -388,7 +412,17 @@ function DisplayInput($username,$password,$password2)
     <input id="password2" name="password2" type="password" value="' . $password2 . '" class="input-xlarge" maxlength="30">
 
   </div>
-</div>';
+</div>
+
+<!-- Textarea -->
+<div class="control-group">
+  <label class="control-label" for="additional_user_settings">Additional Settings</label>
+  <div class="controls" >                     
+    <textarea id="additional_user_settings" name="additional_user_settings" rows="2" ' .$textarea_width_style. '>' . $additional_user_settings . '</textarea>
+  </div>
+</div>
+
+';
 }
 
 function DisplayAddEditDeleteButton()
@@ -471,6 +505,9 @@ function DisplayUserList()
               Password
             </th>
             <th>
+              Additional Settings
+            </th>
+            <th>
 
             </th>
 
@@ -491,11 +528,13 @@ function DisplayUserList()
       {
         $css_style_class='class="info"';
         $css_style='style="border: none;background-color: #d9edf7;"';
+        $textarea_css_style='style="border: none;background-color: #d9edf7;overflow-y: scroll;"';
       }
       else
       {
         $css_style_class="";
         $css_style='style="border: none;"';
+        $textarea_css_style='style="border: none;overflow-y: scroll;"';
       }
 
        echo '<tr ' . $css_style_class . ' >';
@@ -513,7 +552,12 @@ function DisplayUserList()
             <td>
 
               <input type="password" readOnly="true" id="user_password_id_' . $count . '" value="'
-              . Encryption::Decrypt($row['password']) . '" ' .$css_style .'/>
+              . (new Encryption())->Decrypt($row['password']) . '" ' .$css_style .'/>
+            </td>
+            <td>
+
+              <textarea readonly id="additional_user_settings" rows="2" ' .$textarea_css_style .'>'
+              . base64_decode($row['additional_settings']) . '</textarea>
             </td>
              <td>
             <button class="btn btn-info" id="btn_show_user_password_' . $count . '" onclick="Show_User_Password(\'user_password_id_' . $count . '\',\'btn_show_user_password_' . $count . '\');return false;" >Show User Password</button>
@@ -544,11 +588,13 @@ function DisplayUserListForMobile()
       {
         $div_css_style='style="padding: 15px;background-color: #d9edf7;"';
         $password_css_style='style="border: none;background-color: #d9edf7;"';
+        $textarea_css_style='style="border: none;background-color: #d9edf7;overflow-y: scroll;"';
       }
       else
       {
         $div_css_style='style="padding: 15px;background-color: #e6fff2;"';
         $password_css_style='style="border: none;background-color: #e6fff2;"';
+        $textarea_css_style='style="border: none;background-color: #e6fff2;overflow-y: scroll;"';
       }
        
 
@@ -579,9 +625,16 @@ function DisplayUserListForMobile()
             </tr>
             <tr><td>
               <input type="password" readOnly="true" id="user_password_id_' . $count . '" value="'
-              . Encryption::Decrypt($row['password']) . '"  ' . $password_css_style . '/>
+              . (new Encryption())->Decrypt($row['password']) . '"  ' . $password_css_style . '/>
             </td></tr>
           
+            <tr>
+              <td><b>Additional Settings:</b></td>
+            </tr>
+            <tr><td>
+            <textarea readonly id="additional_user_settings" rows="2" ' .$textarea_css_style .'>'
+              . base64_decode($row['additional_settings']) . '</textarea>
+            </td></tr>
           
           <tr>
             <td>
